@@ -8,33 +8,55 @@
 <style>
 body{
   margin:0;
-  background:#0d0d0d;
   font-family:Arial;
-  color:#fff;
-  text-align:center;
+  background:#ffeef5;
 }
 
-h1{
-  margin:20px 0 10px;
+/* LAYOUT */
+.container{
+  display:flex;
+  flex-wrap:wrap;
+}
+
+/* LATERAL */
+.sidebar{
+  width:300px;
+  background:#ffd6e7;
+  padding:15px;
+  box-sizing:border-box;
+}
+
+.sidebar h2{
+  text-align:center;
+  margin-top:0;
+}
+
+.info{
+  font-size:14px;
+  margin-bottom:12px;
+  line-height:1.4;
 }
 
 /* GRID */
+.main{
+  flex:1;
+  padding:10px;
+}
+
 .grid{
   display:grid;
   grid-template-columns:repeat(10,1fr);
   gap:6px;
-  padding:10px;
   max-width:500px;
   margin:auto;
 }
 
-/* NÚMEROS */
 .numero{
   aspect-ratio:1/1;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:#1f1f1f;
+  background:#fff;
   border-radius:8px;
   cursor:pointer;
   font-weight:bold;
@@ -43,7 +65,7 @@ h1{
 
 .numero:hover{
   transform:scale(1.05);
-  background:#333;
+  background:#ffb6d1;
 }
 
 .reservado{
@@ -52,7 +74,8 @@ h1{
 }
 
 .pago{
-  background:#28a745;
+  background:#ff69b4;
+  color:#fff;
 }
 
 /* FORM */
@@ -61,7 +84,6 @@ h1{
   bottom:0;
   width:100%;
   background:#fff;
-  color:#000;
   padding:15px;
   display:none;
 }
@@ -71,15 +93,89 @@ input{
   margin:5px 0;
   padding:10px;
 }
+
+/* MOBILE */
+@media(max-width:700px){
+  .sidebar{
+    width:100%;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<h1>🎟️ Rifa da Maitê</h1>
+<div class="container">
 
-<div class="grid" id="grid"></div>
+<!-- LATERAL -->
+<div class="sidebar">
 
+<h2>🎀 RIFA DA MAITÊ</h2>
+
+<div class="info">
+🍼 <b>P (Pequena)</b><br>
+01 a 20
+</div>
+
+<div class="info">
+👶 <b>M (Média)</b><br>
+21 a 60
+</div>
+
+<div class="info">
+💖 <b>G (Grande)</b><br>
+61 a 90
+</div>
+
+<div class="info">
+🌸 <b>GG (Extra G)</b><br>
+91 a 100
+</div>
+
+<hr>
+
+<div class="info">
+🐷 <b>Prêmio:</b><br>
+R$300,00 no PIX
+</div>
+
+<div class="info">
+🎁 <b>Valor:</b><br>
+1 pacote de fraldas<br>
+ou 1 mimo
+</div>
+
+<div class="info">
+📱 <b>WhatsApp:</b><br>
+(48) 98445-0593
+</div>
+
+<div class="info">
+Escolha seu número e combine a entrega
+</div>
+
+<div class="info">
+📅 <b>Sorteio:</b><br>
+Após vender todos os números
+</div>
+
+<hr>
+
+<div class="info" style="text-align:center;">
+Muito obrigado! 💖<br>
+<b>Maitê</b>
+</div>
+
+</div>
+
+<!-- GRID -->
+<div class="main">
+  <div class="grid" id="grid"></div>
+</div>
+
+</div>
+
+<!-- FORM -->
 <div id="form">
   <h3 id="num"></h3>
   <input id="nome" placeholder="Seu nome">
@@ -92,10 +188,6 @@ input{
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// ADMIN
-const params = new URLSearchParams(window.location.search);
-const isAdmin = params.get("admin") === "123";
-
 // FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDT8hvEal...",
@@ -104,15 +196,15 @@ const firebaseConfig = {
   projectId: "rifa-maite"
 };
 
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const grid = document.getElementById("grid");
 let selecionado = null;
 
-// CRIAR GRID
+// GRID
 for(let i=1;i<=100;i++){
-
   let num = i.toString().padStart(2,'0');
 
   let div = document.createElement("div");
@@ -122,17 +214,10 @@ for(let i=1;i<=100;i++){
 
   div.onclick = ()=>clicar(div,num);
 
-  div.oncontextmenu = (e)=>{
-    e.preventDefault();
-    if(isAdmin){
-      db.ref("rifa/"+num).remove();
-    }
-  };
-
   grid.appendChild(div);
 }
 
-// STATUS TEMPO REAL
+// STATUS
 db.ref("rifa").on("value", snap=>{
   let data = snap.val() || {};
 
@@ -151,19 +236,6 @@ db.ref("rifa").on("value", snap=>{
 
 // CLICK
 function clicar(div,num){
-
-  if(isAdmin){
-    db.ref("rifa/"+num).once("value").then(snap=>{
-      if(!snap.exists()) return;
-
-      let status = snap.val().status;
-
-      db.ref("rifa/"+num).update({
-        status: status==="reservado" ? "pago" : "reservado"
-      });
-    });
-    return;
-  }
 
   if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
 
@@ -196,7 +268,7 @@ function reservar(){
       status:"reservado"
     });
 
-    window.open(`https://wa.me/5548988407996?text=Escolhi o número ${selecionado} na rifa 👶`);
+    window.open(`https://wa.me/5548984450593?text=Escolhi o número ${selecionado} na rifa 👶`);
 
     fecharForm();
   });
