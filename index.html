@@ -3,32 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Rifa do Chá da Maitê 👶</title>
-
-<link rel="manifest" href="manifest.json">
+<title>Rifa da Maitê 👶</title>
 
 <style>
 body{
   margin:0;
-  font-family: Arial;
+  font-family:Arial;
   background:#fdf6f0;
-}
-
-/* HEADER */
-.header{
   text-align:center;
-  padding:15px;
-  background:#fff;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
-.header h1{
-  margin:5px;
-  color:#c27ba0;
-}
+h1{ color:#c27ba0; }
 
-/* GRID */
 .grid{
   display:grid;
   grid-template-columns: repeat(10,1fr);
@@ -42,20 +28,16 @@ body{
   padding:12px;
   border-radius:10px;
   background:#fff;
-  text-align:center;
   cursor:pointer;
   border:1px solid #ddd;
   transition:0.2s;
 }
 
-.numero:hover{
-  transform:scale(1.05);
-}
+.numero:hover{ transform:scale(1.05); }
 
 .reservado{ background:#ffe599; }
 .pago{ background:#b6d7a8; }
 
-/* FORM */
 #form{
   position:fixed;
   bottom:0;
@@ -63,17 +45,12 @@ body{
   background:#fff;
   padding:15px;
   display:none;
-  box-shadow:0 -2px 10px rgba(0,0,0,0.2);
-  border-top-left-radius:15px;
-  border-top-right-radius:15px;
 }
 
 input{
   width:90%;
   padding:10px;
   margin:5px;
-  border-radius:8px;
-  border:1px solid #ccc;
 }
 
 button{
@@ -83,33 +60,25 @@ button{
   color:#fff;
   border:none;
   border-radius:10px;
-  margin-top:5px;
 }
 
-.fechar{
-  background:#999;
-}
-
-/* INFO */
-.info{
-  text-align:center;
-  padding:10px;
-  font-size:14px;
+.adminBar{
+  background:#000;
+  color:#fff;
+  padding:5px;
+  font-size:12px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <h1>👶 Rifa do Chá da Maitê</h1>
-  <p>🎁 Valor: 1 fralda ou 1 mimo</p>
+<div id="adminBar" class="adminBar" style="display:none;">
+  🔐 MODO ADMIN ATIVO
 </div>
 
-<div class="info">
-  🟡 Reservado | 🟢 Pago<br>
-  Clique no número para escolher
-</div>
+<h1>👶 Rifa da Maitê</h1>
+<p>1 fralda ou mimo</p>
 
 <div class="grid" id="grid"></div>
 
@@ -118,22 +87,26 @@ button{
   <input id="nome" placeholder="Seu nome">
   <input id="whats" placeholder="WhatsApp">
   <button onclick="reservar()">Reservar</button>
-  <button class="fechar" onclick="fecharForm()">Cancelar</button>
+  <button onclick="fecharForm()">Cancelar</button>
 </div>
 
-<!-- Firebase (VERSÃO COMPATÍVEL) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+// 🔐 detectar admin
+const isAdmin = window.location.search.includes("admin=123");
+
+if(isAdmin){
+  document.getElementById("adminBar").style.display="block";
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDT8hvEalLwiYJVNek-2X2Xz8niK6jP5R0",
+  apiKey: "AIzaSyDT8hvEal...",
   authDomain: "rifa-maite.firebaseapp.com",
   databaseURL: "https://rifa-maite-default-rtdb.firebaseio.com",
-  projectId: "rifa-maite",
-  storageBucket: "rifa-maite.firebasestorage.app",
-  messagingSenderId: "343093748169",
-  appId: "1:343093748169:web:ac9a0c9a32ac46d4e60818"
+  projectId: "rifa-maite"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -150,20 +123,45 @@ for(let i=1;i<=100;i++){
   div.className="numero";
   div.innerText = num;
 
-  div.onclick = () => {
-    if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
-
-    selecionado = num;
-    document.getElementById("form").style.display="block";
-    document.getElementById("num").innerText = "Número "+num;
+  div.onclick = () => clickNumero(div, num);
+  div.oncontextmenu = (e) => {
+    e.preventDefault();
+    if(isAdmin) liberar(num);
   };
 
   grid.appendChild(div);
 }
 
-// escutar banco
-db.ref("rifa").on("value", snapshot=>{
-  const data = snapshot.val() || {};
+// clique
+function clickNumero(div, num){
+  if(isAdmin){
+    const ref = db.ref("rifa/"+num);
+
+    ref.once("value").then(snap=>{
+      if(!snap.exists()) return;
+
+      const data = snap.val();
+
+      if(data.status === "reservado"){
+        ref.update({status:"pago"});
+      } else {
+        ref.update({status:"reservado"});
+      }
+    });
+
+    return;
+  }
+
+  if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
+
+  selecionado = num;
+  document.getElementById("form").style.display="block";
+  document.getElementById("num").innerText = "Número "+num;
+}
+
+// atualizar tela
+db.ref("rifa").on("value", snap=>{
+  const data = snap.val() || {};
 
   document.querySelectorAll(".numero").forEach(div=>{
     const num = div.innerText;
@@ -180,10 +178,10 @@ db.ref("rifa").on("value", snapshot=>{
   });
 });
 
-// reservar com proteção
+// reservar
 function reservar(){
-  const nome = document.getElementById("nome").value.trim();
-  const whats = document.getElementById("whats").value.trim();
+  const nome = document.getElementById("nome").value;
+  const whats = document.getElementById("whats").value;
 
   if(!nome || !whats){
     alert("Preencha tudo");
@@ -192,8 +190,8 @@ function reservar(){
 
   const ref = db.ref("rifa/"+selecionado);
 
-  ref.once("value").then(snapshot=>{
-    if(snapshot.exists()){
+  ref.once("value").then(snap=>{
+    if(snap.exists()){
       alert("Número já escolhido!");
       return;
     }
@@ -201,24 +199,24 @@ function reservar(){
     ref.set({
       nome,
       whats,
-      status:"reservado",
-      data: new Date().toISOString()
+      status:"reservado"
     });
 
-    window.open(
-      `https://wa.me/5548988407996?text=Olá! Meu nome é ${nome} e escolhi o número ${selecionado} na rifa da Maitê 😊`
-    );
+    window.open(`https://wa.me/5548988407996?text=Escolhi o número ${selecionado} na rifa 😊`);
 
     fecharForm();
   });
 }
 
-// fechar form
+// liberar número
+function liberar(num){
+  if(confirm("Liberar número "+num+"?")){
+    db.ref("rifa/"+num).remove();
+  }
+}
+
 function fecharForm(){
   document.getElementById("form").style.display="none";
-  document.getElementById("nome").value="";
-  document.getElementById("whats").value="";
-  selecionado = null;
 }
 </script>
 
