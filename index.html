@@ -4,22 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Rifa da Maitê</title>
+<title>Rifa do Chá da Maitê 👶</title>
 
 <link rel="manifest" href="manifest.json">
 
 <style>
 body{
-  font-family: 'Arial';
-  background:#fdf6f0;
-  text-align:center;
   margin:0;
+  font-family: Arial;
+  background:#fdf6f0;
 }
 
-h1{
+/* HEADER */
+.header{
+  text-align:center;
+  padding:15px;
+  background:#fff;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header h1{
+  margin:5px;
   color:#c27ba0;
 }
 
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns: repeat(10,1fr);
@@ -31,15 +40,22 @@ h1{
 
 .numero{
   padding:12px;
-  border-radius:8px;
+  border-radius:10px;
   background:#fff;
+  text-align:center;
   cursor:pointer;
   border:1px solid #ddd;
+  transition:0.2s;
+}
+
+.numero:hover{
+  transform:scale(1.05);
 }
 
 .reservado{ background:#ffe599; }
 .pago{ background:#b6d7a8; }
 
+/* FORM */
 #form{
   position:fixed;
   bottom:0;
@@ -48,12 +64,16 @@ h1{
   padding:15px;
   display:none;
   box-shadow:0 -2px 10px rgba(0,0,0,0.2);
+  border-top-left-radius:15px;
+  border-top-right-radius:15px;
 }
 
 input{
   width:90%;
   padding:10px;
   margin:5px;
+  border-radius:8px;
+  border:1px solid #ccc;
 }
 
 button{
@@ -63,14 +83,33 @@ button{
   color:#fff;
   border:none;
   border-radius:10px;
+  margin-top:5px;
+}
+
+.fechar{
+  background:#999;
+}
+
+/* INFO */
+.info{
+  text-align:center;
+  padding:10px;
+  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>👶 Rifa do Chá da Maitê</h1>
-<p>Valor: 1 fralda ou mimo</p>
+<div class="header">
+  <h1>👶 Rifa do Chá da Maitê</h1>
+  <p>🎁 Valor: 1 fralda ou 1 mimo</p>
+</div>
+
+<div class="info">
+  🟡 Reservado | 🟢 Pago<br>
+  Clique no número para escolher
+</div>
 
 <div class="grid" id="grid"></div>
 
@@ -79,11 +118,12 @@ button{
   <input id="nome" placeholder="Seu nome">
   <input id="whats" placeholder="WhatsApp">
   <button onclick="reservar()">Reservar</button>
+  <button class="fechar" onclick="fecharForm()">Cancelar</button>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+<!-- Firebase (VERSÃO COMPATÍVEL) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -93,8 +133,7 @@ const firebaseConfig = {
   projectId: "rifa-maite",
   storageBucket: "rifa-maite.firebasestorage.app",
   messagingSenderId: "343093748169",
-  appId: "1:343093748169:web:ac9a0c9a32ac46d4e60818",
-  measurementId: "G-H1MFD316ZG"
+  appId: "1:343093748169:web:ac9a0c9a32ac46d4e60818"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -112,7 +151,7 @@ for(let i=1;i<=100;i++){
   div.innerText = num;
 
   div.onclick = () => {
-    if(div.classList.contains("reservado")) return;
+    if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
 
     selecionado = num;
     document.getElementById("form").style.display="block";
@@ -127,31 +166,59 @@ db.ref("rifa").on("value", snapshot=>{
   const data = snapshot.val() || {};
 
   document.querySelectorAll(".numero").forEach(div=>{
+    const num = div.innerText;
+
     div.classList.remove("reservado","pago");
 
-    if(data[div.innerText]){
-      div.classList.add("reservado");
+    if(data[num]){
+      if(data[num].status === "pago"){
+        div.classList.add("pago");
+      } else {
+        div.classList.add("reservado");
+      }
     }
   });
 });
 
-// reservar
+// reservar com proteção
 function reservar(){
-  const nome = document.getElementById("nome").value;
-  const whats = document.getElementById("whats").value;
+  const nome = document.getElementById("nome").value.trim();
+  const whats = document.getElementById("whats").value.trim();
 
   if(!nome || !whats){
     alert("Preencha tudo");
     return;
   }
 
-  db.ref("rifa/"+selecionado).set({
-    nome, whats, status:"reservado"
+  const ref = db.ref("rifa/"+selecionado);
+
+  ref.once("value").then(snapshot=>{
+    if(snapshot.exists()){
+      alert("Número já escolhido!");
+      return;
+    }
+
+    ref.set({
+      nome,
+      whats,
+      status:"reservado",
+      data: new Date().toISOString()
+    });
+
+    window.open(
+      `https://wa.me/5548988407996?text=Olá! Meu nome é ${nome} e escolhi o número ${selecionado} na rifa da Maitê 😊`
+    );
+
+    fecharForm();
   });
+}
 
-  window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
-
+// fechar form
+function fecharForm(){
   document.getElementById("form").style.display="none";
+  document.getElementById("nome").value="";
+  document.getElementById("whats").value="";
+  selecionado = null;
 }
 </script>
 
