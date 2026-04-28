@@ -11,7 +11,7 @@ body{
   background:#000;
 }
 
-/* ÁREA TOTAL */
+/* ÁREA */
 .board{
   position:relative;
   width:100vw;
@@ -23,40 +23,35 @@ body{
   width:100%;
   height:100%;
   object-fit:contain;
-  filter: drop-shadow(0 0 10px rgba(0,0,0,0.2));
 }
 
-/* NÚMEROS */
+/* ÁREA CLICÁVEL */
 .numero{
   position:absolute;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  font-size:11px;
-  font-weight:bold;
-
-  color:#444;
-
-  background:transparent; /* 🔥 sem fundo */
-  border:none; /* 🔥 remove borda */
+  width:3.8%;
+  height:5.5%;
 
   cursor:pointer;
-  transition:0.2s;
+
+  background:transparent;
+  border:none;
+  color:transparent;
 }
 
+/* HOVER */
 .numero:hover{
-  transform:scale(1.2);
-  color:#c27ba0;
+  background:rgba(255,255,255,0.25);
+  border-radius:6px;
 }
-  
+
+/* STATUS */
 .reservado{
-  background:rgba(255,229,153,0.6);
+  background:rgba(255,229,153,0.7);
   border-radius:6px;
 }
 
 .pago{
-  background:rgba(182,215,168,0.7);
+  background:rgba(182,215,168,0.8);
   border-radius:6px;
 }
 
@@ -100,21 +95,20 @@ body{
   <button onclick="fecharForm()">Cancelar</button>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// 🔐 ADMIN
+// ADMIN
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("admin") === "123";
 if(isAdmin){
   document.getElementById("adminBar").style.display="block";
 }
 
-// 🔥 FIREBASE
+// FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyDT8hvEal...",
+  apiKey: "SUA_KEY_AQUI",
   authDomain: "rifa-maite.firebaseapp.com",
   databaseURL: "https://rifa-maite-default-rtdb.firebaseio.com",
   projectId: "rifa-maite"
@@ -126,17 +120,17 @@ const db = firebase.database();
 const board = document.querySelector(".board");
 let selecionado = null;
 
-// 🔥 AJUSTE DA TABELA (MEXE SÓ AQUI)
+// 🔧 AJUSTE FINO (SÓ ISSO AQUI)
 let startX = 52;
 let startY = 18;
 let largura = 42;
 let altura = 68;
 
-// CALCULO
+// CALCULO RESPONSIVO
 let gapX = largura / 10;
 let gapY = altura / 10;
 
-// CRIAR NÚMEROS
+// CRIAR ÁREAS CLICÁVEIS
 let count = 1;
 
 for(let y=0;y<10;y++){
@@ -169,7 +163,7 @@ for(let y=0;y<10;y++){
   }
 }
 
-// ATUALIZAR STATUS
+// ATUALIZA STATUS EM TEMPO REAL
 db.ref("rifa").on("value", snap=>{
   const data = snap.val() || {};
 
@@ -179,7 +173,9 @@ db.ref("rifa").on("value", snap=>{
     div.classList.remove("reservado","pago");
 
     if(data[num]){
-      div.classList.add(data[num].status==="pago" ? "pago" : "reservado");
+      div.classList.add(
+        data[num].status === "pago" ? "pago" : "reservado"
+      );
     }
   });
 });
@@ -225,7 +221,11 @@ function reservar(){
       return;
     }
 
-    ref.set({nome, whats, status:"reservado"});
+    ref.set({
+      nome,
+      whats,
+      status:"reservado"
+    });
 
     window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
 
