@@ -318,14 +318,18 @@ function reservar(){
     }
 
     ref.set({
-      nome,
-      whats,
-      status:"reservado"
-    });
+  nome,
+  whats,
+  status:"reservado"
+});
 
-    window.open(`https://wa.me/5548984450593?text=Escolhi o número ${selecionado} na rifa 👶`);
+let enviar = confirm("Deseja enviar mensagem no WhatsApp agora?");
 
-    fecharForm();
+if(enviar){
+  window.open(`https://wa.me/5548984450593?text=Olá! Reservei o número ${selecionado} na rifa da Maitê 👶`);
+}
+
+fecharForm();
   });
 }
 
