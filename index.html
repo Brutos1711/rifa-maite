@@ -9,7 +9,7 @@
 body{
   margin:0;
   font-family:Arial;
-  background:#ffeef5;
+  background:#f7d6e0; /* rosa médio suave */
 }
 
 /* LAYOUT */
@@ -20,27 +20,36 @@ body{
 
 /* LATERAL */
 .sidebar{
-  width:300px;
-  background:#ffd6e7;
-  padding:15px;
+  width:280px;
+  background:#f7d6e0;
+  padding:20px;
   box-sizing:border-box;
+  border-right:2px solid #f0bccc;
 }
 
 .sidebar h2{
   text-align:center;
   margin-top:0;
+  font-size:22px;
 }
 
 .info{
   font-size:14px;
-  margin-bottom:12px;
-  line-height:1.4;
+  margin-bottom:14px;
+  line-height:1.5;
+}
+
+.bloco{
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:10px;
 }
 
 /* GRID */
 .main{
   flex:1;
-  padding:10px;
+  padding:15px;
 }
 
 .grid{
@@ -57,7 +66,7 @@ body{
   align-items:center;
   justify-content:center;
   background:#fff;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
   font-weight:bold;
   transition:0.2s;
@@ -65,16 +74,16 @@ body{
 
 .numero:hover{
   transform:scale(1.05);
-  background:#ffb6d1;
+  background:#f0bccc;
 }
 
 .reservado{
-  background:#ffc107;
+  background:#ffe082;
   color:#000;
 }
 
 .pago{
-  background:#ff69b4;
+  background:#ec87a6;
   color:#fff;
 }
 
@@ -98,6 +107,8 @@ input{
 @media(max-width:700px){
   .sidebar{
     width:100%;
+    border-right:none;
+    border-bottom:2px solid #f0bccc;
   }
 }
 </style>
@@ -110,59 +121,45 @@ input{
 <!-- LATERAL -->
 <div class="sidebar">
 
-<h2>🎀 RIFA DA MAITÊ</h2>
+<h2>🎀 Rifa da Maitê</h2>
 
-<div class="info">
-🍼 <b>P (Pequena)</b><br>
-01 a 20
+<div class="bloco">
+🍼 <b>P (Pequena)</b><br>01 a 20
 </div>
 
-<div class="info">
-👶 <b>M (Média)</b><br>
-21 a 60
+<div class="bloco">
+👶 <b>M (Média)</b><br>21 a 60
 </div>
 
-<div class="info">
-💖 <b>G (Grande)</b><br>
-61 a 90
+<div class="bloco">
+💖 <b>G (Grande)</b><br>61 a 90
 </div>
 
-<div class="info">
-🌸 <b>GG (Extra G)</b><br>
-91 a 100
+<div class="bloco">
+🌸 <b>GG (Extra G)</b><br>91 a 100
 </div>
 
-<hr>
-
-<div class="info">
-🐷 <b>Prêmio:</b><br>
-R$300,00 no PIX
+<div class="bloco">
+🐷 <b>Prêmio:</b><br>R$300 no PIX
 </div>
 
-<div class="info">
+<div class="bloco">
 🎁 <b>Valor:</b><br>
-1 pacote de fraldas<br>
-ou 1 mimo
+1 pacote de fraldas<br>ou 1 mimo
 </div>
 
-<div class="info">
+<div class="bloco">
 📱 <b>WhatsApp:</b><br>
 (48) 98445-0593
 </div>
 
-<div class="info">
-Escolha seu número e combine a entrega
-</div>
-
-<div class="info">
+<div class="bloco">
 📅 <b>Sorteio:</b><br>
 Após vender todos os números
 </div>
 
-<hr>
-
 <div class="info" style="text-align:center;">
-Muito obrigado! 💖<br>
+Muito obrigado 💖<br>
 <b>Maitê</b>
 </div>
 
@@ -188,6 +185,10 @@ Muito obrigado! 💖<br>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+// 🔐 ADMIN ESCONDIDO
+const params = new URLSearchParams(window.location.search);
+const isAdmin = params.get("admin") === "123";
+
 // FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDT8hvEal...",
@@ -195,7 +196,6 @@ const firebaseConfig = {
   databaseURL: "https://rifa-maite-default-rtdb.firebaseio.com",
   projectId: "rifa-maite"
 };
-
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -205,6 +205,7 @@ let selecionado = null;
 
 // GRID
 for(let i=1;i<=100;i++){
+
   let num = i.toString().padStart(2,'0');
 
   let div = document.createElement("div");
@@ -213,6 +214,16 @@ for(let i=1;i<=100;i++){
   div.dataset.num = num;
 
   div.onclick = ()=>clicar(div,num);
+
+  // ADMIN: botão direito libera
+  div.oncontextmenu = (e)=>{
+    e.preventDefault();
+    if(isAdmin){
+      if(confirm("Liberar número "+num+"?")){
+        db.ref("rifa/"+num).remove();
+      }
+    }
+  };
 
   grid.appendChild(div);
 }
@@ -236,6 +247,20 @@ db.ref("rifa").on("value", snap=>{
 
 // CLICK
 function clicar(div,num){
+
+  // ADMIN: alterna status
+  if(isAdmin){
+    db.ref("rifa/"+num).once("value").then(snap=>{
+      if(!snap.exists()) return;
+
+      let status = snap.val().status;
+
+      db.ref("rifa/"+num).update({
+        status: status==="reservado" ? "pago" : "reservado"
+      });
+    });
+    return;
+  }
 
   if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
 
