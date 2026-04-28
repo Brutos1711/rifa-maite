@@ -164,15 +164,30 @@ const grid = document.getElementById("grid");
 let selecionado = null;
 
 // GERAR NÚMEROS
-for(let i=1;i<=100;i++){
-  let num = i.toString().padStart(2,'0');
+let startX = 52;
+let startY = 18;
 
-  let div = document.createElement("div");
-  div.className="numero";
-  div.innerText = num;
+let largura = 42;
+let altura = 68;
 
-  div.onclick = () => {
-    document.getElementById("clickSound").play();
+let gapX = largura / 10;
+let gapY = altura / 10;
+
+let count = 1;
+
+for(let linha=0; linha<10; linha++){
+  for(let col=0; col<10; col++){
+
+    let num = count.toString().padStart(2,'0');
+
+    let top = startY + (linha * gapY);
+    let left = startX + (col * gapX);
+
+    criarNumero(num, top, left);
+
+    count++;
+  }
+}
 
     // ADMIN
     if(isAdmin){
@@ -252,7 +267,56 @@ function reservar(){
     fecharForm();
   });
 }
+  
+function criarNumero(num, top, left){
+  let div = document.createElement("div");
 
+  div.className="numero";
+  div.innerText = num;
+
+  div.style.position = "absolute";
+  div.style.top = top + "%";
+  div.style.left = left + "%";
+  div.style.width = "3.8%";
+  div.style.height = "5.5%";
+
+  div.onclick = () => clicarNumero(div, num);
+
+  div.oncontextmenu = (e)=>{
+    e.preventDefault();
+    if(isAdmin){
+      if(confirm("Liberar número "+num+"?")){
+        db.ref("rifa/"+num).remove();
+      }
+    }
+  };
+
+  document.querySelector(".board").appendChild(div);
+}
+  
+function clicarNumero(div, num){
+  document.getElementById("clickSound").play();
+
+  if(isAdmin){
+    db.ref("rifa/"+num).once("value").then(snap=>{
+      if(!snap.exists()) return;
+
+      let status = snap.val().status;
+
+      db.ref("rifa/"+num).update({
+        status: status==="reservado" ? "pago" : "reservado"
+      });
+    });
+    return;
+  }
+
+  if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
+
+  selecionado = num;
+  document.getElementById("form").style.display="block";
+  document.getElementById("num").innerText = "Número "+num;
+}
+  
 function fecharForm(){
   document.getElementById("form").style.display="none";
 }
