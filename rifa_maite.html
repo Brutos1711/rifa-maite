@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Rifa da Maitê</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body{
+  font-family: 'Arial';
+  background:#fdf6f0;
+  text-align:center;
+  margin:0;
+}
+
+h1{
+  color:#c27ba0;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(10,1fr);
+  gap:6px;
+  padding:10px;
+  max-width:600px;
+  margin:auto;
+}
+
+.numero{
+  padding:12px;
+  border-radius:8px;
+  background:#fff;
+  cursor:pointer;
+  border:1px solid #ddd;
+}
+
+.reservado{ background:#ffe599; }
+.pago{ background:#b6d7a8; }
+
+#form{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#fff;
+  padding:15px;
+  display:none;
+  box-shadow:0 -2px 10px rgba(0,0,0,0.2);
+}
+
+input{
+  width:90%;
+  padding:10px;
+  margin:5px;
+}
+
+button{
+  padding:12px;
+  width:90%;
+  background:#e06666;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>👶 Rifa do Chá da Maitê</h1>
+<p>Valor: 1 fralda ou mimo</p>
+
+<div class="grid" id="grid"></div>
+
+<div id="form">
+  <h3 id="num"></h3>
+  <input id="nome" placeholder="Seu nome">
+  <input id="whats" placeholder="WhatsApp">
+  <button onclick="reservar()">Reservar</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "SUA_KEY",
+  authDomain: "SEU_APP.firebaseapp.com",
+  databaseURL: "https://SEU_APP-default-rtdb.firebaseio.com",
+  projectId: "SEU_APP",
+  storageBucket: "SEU_APP.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const grid = document.getElementById("grid");
+let selecionado = null;
+
+// criar números
+for(let i=1;i<=100;i++){
+  let num = i.toString().padStart(2,'0');
+
+  let div = document.createElement("div");
+  div.className="numero";
+  div.innerText = num;
+
+  div.onclick = () => {
+    if(div.classList.contains("reservado")) return;
+
+    selecionado = num;
+    document.getElementById("form").style.display="block";
+    document.getElementById("num").innerText = "Número "+num;
+  };
+
+  grid.appendChild(div);
+}
+
+// escutar banco
+db.ref("rifa").on("value", snapshot=>{
+  const data = snapshot.val() || {};
+
+  document.querySelectorAll(".numero").forEach(div=>{
+    div.classList.remove("reservado","pago");
+
+    if(data[div.innerText]){
+      div.classList.add("reservado");
+    }
+  });
+});
+
+// reservar
+function reservar(){
+  const nome = document.getElementById("nome").value;
+  const whats = document.getElementById("whats").value;
+
+  if(!nome || !whats){
+    alert("Preencha tudo");
+    return;
+  }
+
+  db.ref("rifa/"+selecionado).set({
+    nome, whats, status:"reservado"
+  });
+
+  window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
+
+  document.getElementById("form").style.display="none";
+}
+</script>
+
+</body>
+</html>
