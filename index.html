@@ -8,38 +8,27 @@
 <style>
 body{
   margin:0;
-  font-family: Arial;
-  background:#fdf6f0;
+  font-family:Arial;
 }
 
+/* CONTAINER */
 .container{
   display:flex;
-  flex-wrap:wrap;
+  min-height:100vh;
 }
 
-/* LADO ESQUERDO */
+/* ESQUERDA = ARTE */
 .left{
-  width:35%;
-  min-width:280px;
-  background:#fff;
-  padding:20px;
+  width:50%;
+  background:url('arte.png') no-repeat center;
+  background-size:cover;
 }
 
-.left h2{
-  color:#c27ba0;
-}
-
-.box{
-  background:#fff5f7;
-  padding:10px;
-  margin-bottom:15px;
-  border-radius:10px;
-}
-
-/* LADO DIREITO */
+/* DIREITA */
 .right{
-  flex:1;
-  padding:10px;
+  width:50%;
+  background:#fdf6f0;
+  padding:20px;
   text-align:center;
 }
 
@@ -47,11 +36,12 @@ h1{
   color:#c27ba0;
 }
 
+/* GRID */
 .grid{
   display:grid;
   grid-template-columns: repeat(10,1fr);
   gap:6px;
-  max-width:600px;
+  max-width:500px;
   margin:auto;
 }
 
@@ -71,39 +61,20 @@ h1{
 .reservado{ background:#ffe599; }
 .pago{ background:#b6d7a8; }
 
-/* FORM */
-#form{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#fff;
-  padding:15px;
-  display:none;
-  box-shadow:0 -2px 10px rgba(0,0,0,0.2);
-}
+/* MOBILE */
+@media(max-width:800px){
+  .container{
+    flex-direction:column;
+  }
 
-input{
-  width:90%;
-  padding:10px;
-  margin:5px;
-}
+  .left{
+    height:300px;
+    width:100%;
+  }
 
-button{
-  padding:12px;
-  width:90%;
-  background:#e06666;
-  color:#fff;
-  border:none;
-  border-radius:10px;
-}
-
-/* ADMIN */
-.adminBar{
-  background:#000;
-  color:#fff;
-  text-align:center;
-  padding:5px;
-  display:none;
+  .right{
+    width:100%;
+  }
 }
 </style>
 </head>
@@ -114,44 +85,20 @@ button{
 
 <div class="container">
 
-<!-- ESQUERDA -->
-<div class="left">
+<div class="container">
 
-<h2>👶 Chá da Maitê</h2>
+  <!-- IMAGEM DA RIFA -->
+  <div class="left"></div>
 
-<div class="box">
-<b>🎁 Prêmios</b><br>
-Pequeno<br>
-Médio<br>
-Grande
-</div>
-
-<div class="box">
-<b>📋 Regras</b><br>
-✔ Escolha um número<br>
-✔ Valor: 1 fralda ou mimo<br>
-✔ Entrar em contato via WhatsApp<br>
-✔ Após confirmar, número será marcado como pago
-</div>
-
-<div class="box">
-<b>📞 Contato</b><br>
-(48) 98840-7996
-</div>
+  <!-- SISTEMA -->
+  <div class="right">
+    <h1>🎟️ Escolha seu número</h1>
+    <div class="grid" id="grid"></div>
+  </div>
 
 </div>
 
-<!-- DIREITA -->
-<div class="right">
-
-<h1>🎟️ Escolha seu número</h1>
-
-<div class="grid" id="grid"></div>
-
-</div>
-</div>
-
-<!-- FORM -->
+<!-- FORM (OBRIGATÓRIO) -->
 <div id="form">
   <h3 id="num"></h3>
   <input id="nome" placeholder="Seu nome">
