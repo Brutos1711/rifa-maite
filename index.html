@@ -14,15 +14,16 @@ body{
 /* ÁREA */
 .board{
   position:relative;
-  width:100vw;
-  height:100vh;
+  width:100%;
+  max-width:1000px;
+  margin:auto;
 }
 
 /* IMAGEM */
 .board img{
   width:100%;
-  height:100%;
-  object-fit:contain;
+  height:auto; /* 🔥 ESSENCIAL */
+  display:block;
 }
 
 /* ÁREA CLICÁVEL */
@@ -78,9 +79,38 @@ body{
 }
 </style>
 </head>
-
+ 
 <body>
+  
+<div id="ajusteBox" style="
+position:fixed;
+right:10px;
+top:10px;
+background:#fff;
+padding:10px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+z-index:9999;
+font-size:12px;
+">
 
+<b>AJUSTE</b><br>
+
+X: <button onclick="startX-=1">-</button>
+<button onclick="startX+=1">+</button><br>
+
+Y: <button onclick="startY-=1">-</button>
+<button onclick="startY+=1">+</button><br>
+
+W: <button onclick="largura-=1">-</button>
+<button onclick="largura+=1">+</button><br>
+
+H: <button onclick="altura-=1">-</button>
+<button onclick="altura+=1">+</button><br>
+
+<button onclick="atualizar()">APLICAR</button>
+
+</div>
 <div id="adminBar" class="adminBar">🔐 MODO ADMIN</div>
 
 <div class="board">
@@ -231,6 +261,29 @@ function reservar(){
 
     fecharForm();
   });
+}
+
+  function atualizar(){
+
+  let gapX = largura / 10;
+  let gapY = altura / 10;
+
+  let i = 0;
+
+  board.appendChild(div);
+    let y = Math.floor(i / 10);
+    let x = i % 10;
+
+    div.style.left = (startX + x*gapX) + "%";
+    div.style.top = (startY + y*gapY) + "%";
+    div.style.width = (gapX * 0.8) + "%";
+    div.style.height = (gapY * 0.8) + "%";
+
+    i++;
+  });
+
+  console.log("COPIA ISSO:");
+  console.log(`startX=${startX}, startY=${startY}, largura=${largura}, altura=${altura}`);
 }
 
 function fecharForm(){
