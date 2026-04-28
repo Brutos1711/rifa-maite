@@ -248,20 +248,50 @@ db.ref("rifa").on("value", snap=>{
 // CLICK
 function clicar(div,num){
 
-  // ADMIN: alterna status
   if(isAdmin){
+
     db.ref("rifa/"+num).once("value").then(snap=>{
-      if(!snap.exists()) return;
 
-      let status = snap.val().status;
+      if(!snap.exists()){
+        alert("Número livre");
+        return;
+      }
 
-      db.ref("rifa/"+num).update({
-        status: status==="reservado" ? "pago" : "reservado"
-      });
+      let data = snap.val();
+
+      let acao = prompt(
+`Número: ${num}
+
+Nome: ${data.nome}
+Whats: ${data.whats}
+Status: ${data.status}
+
+Digite:
+1 = Marcar como PAGO
+2 = Marcar como RESERVADO
+3 = LIBERAR`
+      );
+
+      if(acao === "1"){
+        db.ref("rifa/"+num).update({status:"pago"});
+      }
+
+      if(acao === "2"){
+        db.ref("rifa/"+num).update({status:"reservado"});
+      }
+
+      if(acao === "3"){
+        if(confirm("Tem certeza que deseja liberar?")){
+          db.ref("rifa/"+num).remove();
+        }
+      }
+
     });
+
     return;
   }
 
+  // USUÁRIO NORMAL
   if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
 
   selecionado = num;
