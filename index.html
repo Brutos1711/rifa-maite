@@ -8,13 +8,13 @@
 <style>
 body{
   margin:0;
-  background:#000;
-  font-family:Arial;
+  background:#0d0d0d;
+  font-family:Arial, sans-serif;
 }
 
+/* BOARD */
 .board{
   position:relative;
-  width:100%;
   max-width:1000px;
   margin:auto;
 }
@@ -24,28 +24,40 @@ body{
   display:block;
 }
 
+/* NÚMEROS */
 .numero{
   position:absolute;
-  width:3.8%;
-  height:5.5%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:12px;
+  font-weight:bold;
+  color:#fff;
+
+  background:rgba(0,0,0,0.25);
+  border-radius:6px;
+
   cursor:pointer;
+  transition:0.2s;
 }
 
 .numero:hover{
-  background:rgba(255,255,255,0.25);
-  border-radius:6px;
+  transform:scale(1.1);
+  background:rgba(255,255,255,0.3);
 }
 
+/* STATUS */
 .reservado{
-  background:rgba(255,229,153,0.7);
-  border-radius:6px;
+  background:rgba(255,193,7,0.8);
+  color:#000;
 }
 
 .pago{
-  background:rgba(182,215,168,0.8);
-  border-radius:6px;
+  background:rgba(40,167,69,0.9);
 }
 
+/* FORM */
 #form{
   position:fixed;
   bottom:0;
@@ -53,8 +65,16 @@ body{
   background:#fff;
   padding:15px;
   display:none;
+  box-shadow:0 -5px 15px rgba(0,0,0,0.3);
 }
 
+input{
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+}
+
+/* ADMIN */
 .adminBar{
   position:fixed;
   top:0;
@@ -66,7 +86,7 @@ body{
   display:none;
 }
 
-/* painel ajuste */
+/* AJUSTE */
 #ajusteBox{
   position:fixed;
   right:10px;
@@ -74,7 +94,6 @@ body{
   background:#fff;
   padding:10px;
   border-radius:10px;
-  box-shadow:0 0 10px rgba(0,0,0,0.3);
   z-index:9999;
   font-size:12px;
 }
@@ -85,27 +104,16 @@ body{
 
 <div id="ajusteBox">
 <b>AJUSTE</b><br>
-
-X: <button onclick="startX--">-</button>
-<button onclick="startX++">+</button><br>
-
-Y: <button onclick="startY--">-</button>
-<button onclick="startY++">+</button><br>
-
-W: <button onclick="largura--">-</button>
-<button onclick="largura++">+</button><br>
-
-H: <button onclick="altura--">-</button>
-<button onclick="altura++">+</button><br>
-
-<button onclick="atualizar()">APLICAR</button>
+X: <button onclick="startX--">-</button> <button onclick="startX++">+</button><br>
+Y: <button onclick="startY--">-</button> <button onclick="startY++">+</button><br>
+W: <button onclick="largura--">-</button> <button onclick="largura++">+</button><br>
+H: <button onclick="altura--">-</button> <button onclick="altura++">+</button><br>
+<button onclick="salvarConfig()">SALVAR</button>
 </div>
 
 <div id="adminBar" class="adminBar">🔐 MODO ADMIN</div>
 
-<div class="board" id="board">
-  <img src="arte.png">
-</div>
+<div class="board" id="board"></div>
 
 <div id="form">
   <h3 id="num"></h3>
@@ -119,7 +127,7 @@ H: <button onclick="altura--">-</button>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// 🔐 ADMIN
+// ADMIN
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("admin") === "123";
 
@@ -127,7 +135,7 @@ if(isAdmin){
   document.getElementById("adminBar").style.display="block";
 }
 
-// 🔥 FIREBASE (COLOCA SUA KEY)
+// FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDT8hvEal...",
   authDomain: "rifa-maite.firebaseapp.com",
@@ -142,16 +150,16 @@ const board = document.getElementById("board");
 
 let selecionado = null;
 
-// 🔧 CONFIG PADRÃO
+// CONFIG
 let startX = 52;
 let startY = 18;
 let largura = 42;
 let altura = 68;
 
-// 🔥 CARREGAR CONFIG ONLINE
+// 🔥 CARREGA CONFIG + RENDER
 db.ref("config").on("value", snap=>{
   if(snap.exists()){
-    const cfg = snap.val();
+    let cfg = snap.val();
     startX = cfg.startX;
     startY = cfg.startY;
     largura = cfg.largura;
@@ -160,10 +168,14 @@ db.ref("config").on("value", snap=>{
   renderGrid();
 });
 
-// 🎯 CRIAR GRID
+// GRID
 function renderGrid(){
 
-  board.innerHTML = '<img src="arte.png">';
+  board.innerHTML = "";
+
+  let img = document.createElement("img");
+  img.src = "arte.png";
+  board.appendChild(img);
 
   let gapX = largura / 10;
   let gapY = altura / 10;
@@ -176,22 +188,21 @@ function renderGrid(){
       let num = count.toString().padStart(2,'0');
 
       let div = document.createElement("div");
-      div.className="numero";
+      div.className = "numero";
       div.innerText = num;
+      div.dataset.num = num;
 
       div.style.left = (startX + x*gapX) + "%";
       div.style.top = (startY + y*gapY) + "%";
-      div.style.width = (gapX * 0.8) + "%";
-      div.style.height = (gapY * 0.8) + "%";
+      div.style.width = (gapX * 0.85) + "%";
+      div.style.height = (gapY * 0.85) + "%";
 
-      div.onclick = () => clicar(div,num);
+      div.onclick = ()=>clicar(div,num);
 
       div.oncontextmenu = (e)=>{
         e.preventDefault();
         if(isAdmin){
-          if(confirm("Liberar número "+num+"?")){
-            db.ref("rifa/"+num).remove();
-          }
+          db.ref("rifa/"+num).remove();
         }
       };
 
@@ -199,26 +210,33 @@ function renderGrid(){
       count++;
     }
   }
+
+  atualizarStatus();
 }
 
-// 🔄 STATUS EM TEMPO REAL
-db.ref("rifa").on("value", snap=>{
-  const data = snap.val() || {};
+// STATUS
+function atualizarStatus(){
+  db.ref("rifa").once("value").then(snap=>{
+    let data = snap.val() || {};
 
-  document.querySelectorAll(".numero").forEach(div=>{
-    let num = div.innerText;
+    document.querySelectorAll(".numero").forEach(div=>{
+      let num = div.dataset.num;
 
-    div.classList.remove("reservado","pago");
+      div.classList.remove("reservado","pago");
 
-    if(data[num]){
-      div.classList.add(
-        data[num].status === "pago" ? "pago" : "reservado"
-      );
-    }
+      if(data[num]){
+        div.classList.add(
+          data[num].status === "pago" ? "pago" : "reservado"
+        );
+      }
+    });
   });
-});
+}
 
-// 👆 CLICK
+// TEMPO REAL STATUS
+db.ref("rifa").on("value", atualizarStatus);
+
+// CLICK
 function clicar(div,num){
 
   if(isAdmin){
@@ -241,9 +259,8 @@ function clicar(div,num){
   document.getElementById("num").innerText = "Número "+num;
 }
 
-// 💾 SALVAR AJUSTE
-function atualizar(){
-
+// SALVAR CONFIG
+function salvarConfig(){
   if(isAdmin){
     db.ref("config").set({
       startX,
@@ -252,12 +269,9 @@ function atualizar(){
       altura
     });
   }
-
-  console.log("CONFIG SALVA:");
-  console.log(startX, startY, largura, altura);
 }
 
-// 📲 RESERVAR
+// RESERVAR
 function reservar(){
   let nome = document.getElementById("nome").value;
   let whats = document.getElementById("whats").value;
@@ -281,7 +295,7 @@ function reservar(){
       status:"reservado"
     });
 
-    window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
+    window.open(`https://wa.me/5548988407996?text=Escolhi o número ${selecionado} na rifa 👶`);
 
     fecharForm();
   });
