@@ -17,11 +17,12 @@ body{
   min-height:100vh;
 }
 
-/* ESQUERDA = ARTE */
+/* ESQUERDA */
 .left{
   width:50%;
   background:url('arte.png') no-repeat center;
-  background-size:cover;
+  background-size:contain;
+  background-color:#fdf6f0;
 }
 
 /* DIREITA */
@@ -51,15 +52,29 @@ h1{
   background:#fff;
   cursor:pointer;
   border:1px solid #ddd;
-  transition:0.2s;
-}
-
-.numero:hover{
-  transform:scale(1.08);
 }
 
 .reservado{ background:#ffe599; }
 .pago{ background:#b6d7a8; }
+
+/* FORM */
+#form{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#fff;
+  padding:15px;
+  display:none;
+}
+
+/* ADMIN */
+.adminBar{
+  display:none;
+  background:#000;
+  color:#fff;
+  padding:5px;
+  text-align:center;
+}
 
 /* MOBILE */
 @media(max-width:800px){
@@ -68,8 +83,8 @@ h1{
   }
 
   .left{
-    height:300px;
     width:100%;
+    height:300px;
   }
 
   .right{
@@ -85,12 +100,8 @@ h1{
 
 <div class="container">
 
-<div class="container">
-
-  <!-- IMAGEM DA RIFA -->
   <div class="left"></div>
 
-  <!-- SISTEMA -->
   <div class="right">
     <h1>🎟️ Escolha seu número</h1>
     <div class="grid" id="grid"></div>
@@ -98,7 +109,7 @@ h1{
 
 </div>
 
-<!-- FORM (OBRIGATÓRIO) -->
+<!-- FORM -->
 <div id="form">
   <h3 id="num"></h3>
   <input id="nome" placeholder="Seu nome">
@@ -115,8 +126,12 @@ h1{
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-const isAdmin = window.location.search.includes("admin=123");
-if(isAdmin) document.getElementById("adminBar").style.display="block";
+const params = new URLSearchParams(window.location.search);
+const isAdmin = params.get("admin") === "123";
+
+if(isAdmin){
+  document.getElementById("adminBar").style.display="block";
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyDT8hvEal...",
@@ -125,14 +140,12 @@ const firebaseConfig = {
   projectId: "rifa-maite"
 };
 
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const grid = document.getElementById("grid");
 let selecionado = null;
 
-// criar números
 for(let i=1;i<=100;i++){
   let num = i.toString().padStart(2,'0');
 
@@ -173,7 +186,6 @@ for(let i=1;i<=100;i++){
   grid.appendChild(div);
 }
 
-// atualizar tela
 db.ref("rifa").on("value", snap=>{
   const data = snap.val() || {};
 
@@ -188,7 +200,6 @@ db.ref("rifa").on("value", snap=>{
   });
 });
 
-// reservar
 function reservar(){
   let nome = document.getElementById("nome").value;
   let whats = document.getElementById("whats").value;
