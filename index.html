@@ -8,74 +8,41 @@
 <style>
 body{
   margin:0;
-  background:#fdf6f0;
-  display:flex;
-  justify-content:center;
+  background:#000;
 }
 
 /* ÁREA TOTAL */
 .board{
   position:relative;
-  width:100%;
-  max-width:1000px;
+  width:100vw;
+  height:100vh;
 }
 
 /* IMAGEM */
-.imagem{
+.board img{
   width:100%;
-  display:block;
-}
-
-/* GRID SOBRE A IMAGEM (AJUSTE FINO AQUI) */
-.overlay{
-  top:18%;
-  left:52%;
-  width:42%;
-  height:68%;
-}
-
-  /* POSIÇÃO DA TABELA NA IMAGEM */
-  top:18%;
-  left:52%;
-
-  width:42%;
-  height:68%;
-
-  display:grid;
-  grid-template-columns: repeat(10,1fr);
-  grid-template-rows: repeat(10,1fr);
-
-  gap:6px;
+  height:100%;
+  object-fit:contain;
 }
 
 /* NÚMEROS */
 .numero{
+  position:absolute;
   display:flex;
   align-items:center;
   justify-content:center;
 
-  font-size:13px;
-  border-radius:10px;
+  font-size:12px;
+  border-radius:8px;
 
-  background:rgba(255,255,255,0.85);
+  background:rgba(255,255,255,0.7);
   border:1px solid #ccc;
 
   cursor:pointer;
-  transition:0.2s;
 }
 
-.numero:hover{
-  transform:scale(1.15);
-}
-
-/* STATUS */
-.reservado{
-  background:rgba(255,229,153,0.95);
-}
-
-.pago{
-  background:rgba(182,215,168,0.95);
-}
+.reservado{ background:#ffe599; }
+.pago{ background:#b6d7a8; }
 
 /* FORM */
 #form{
@@ -85,7 +52,6 @@ body{
   background:#fff;
   padding:15px;
   display:none;
-  box-shadow:0 -2px 10px rgba(0,0,0,0.2);
 }
 
 /* ADMIN */
@@ -98,17 +64,6 @@ body{
   text-align:center;
   padding:5px;
   display:none;
-  z-index:999;
-}
-
-/* MOBILE */
-@media(max-width:800px){
-  .overlay{
-    top:20%;
-    left:5%;
-    width:90%;
-    height:60%;
-  }
 }
 </style>
 </head>
@@ -118,14 +73,9 @@ body{
 <div id="adminBar" class="adminBar">🔐 MODO ADMIN</div>
 
 <div class="board">
-
-  <img src="arte.png" class="imagem">
-
-  <div class="overlay" id="grid"></div>
-
+  <img src="arte.png">
 </div>
 
-<!-- FORM -->
 <div id="form">
   <h3 id="num"></h3>
   <input id="nome" placeholder="Seu nome">
@@ -134,22 +84,19 @@ body{
   <button onclick="fecharForm()">Cancelar</button>
 </div>
 
-<!-- SOM -->
-<audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
-
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// ADMIN
+// 🔐 ADMIN
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("admin") === "123";
 if(isAdmin){
   document.getElementById("adminBar").style.display="block";
 }
 
-// FIREBASE
+// 🔥 FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDT8hvEal...",
   authDomain: "rifa-maite.firebaseapp.com",
@@ -160,67 +107,50 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const grid = document.getElementById("grid");
+const board = document.querySelector(".board");
 let selecionado = null;
 
-// GERAR NÚMEROS
+// 🔥 AJUSTE DA TABELA (MEXE SÓ AQUI)
 let startX = 52;
 let startY = 18;
-
 let largura = 42;
 let altura = 68;
 
+// CALCULO
 let gapX = largura / 10;
 let gapY = altura / 10;
 
+// CRIAR NÚMEROS
 let count = 1;
 
-for(let linha=0; linha<10; linha++){
-  for(let col=0; col<10; col++){
+for(let y=0;y<10;y++){
+  for(let x=0;x<10;x++){
 
     let num = count.toString().padStart(2,'0');
 
-    let top = startY + (linha * gapY);
-    let left = startX + (col * gapX);
+    let div = document.createElement("div");
+    div.className="numero";
+    div.innerText = num;
 
-    criarNumero(num, top, left);
+    div.style.left = (startX + x*gapX) + "%";
+    div.style.top = (startY + y*gapY) + "%";
+    div.style.width = (gapX * 0.8) + "%";
+    div.style.height = (gapY * 0.8) + "%";
 
+    div.onclick = () => clicar(div,num);
+
+    div.oncontextmenu = (e)=>{
+      e.preventDefault();
+      if(isAdmin){
+        if(confirm("Liberar número "+num+"?")){
+          db.ref("rifa/"+num).remove();
+        }
+      }
+    };
+
+    board.appendChild(div);
     count++;
   }
-}
-
-    // ADMIN
-    if(isAdmin){
-      db.ref("rifa/"+num).once("value").then(snap=>{
-        if(!snap.exists()) return;
-        let status = snap.val().status;
-
-        db.ref("rifa/"+num).update({
-          status: status==="reservado" ? "pago" : "reservado"
-        });
-      });
-      return;
-    }
-
-    // USER
-    if(div.classList.contains("reservado") || div.classList.contains("pago")) return;
-
-    selecionado = num;
-    document.getElementById("form").style.display="block";
-    document.getElementById("num").innerText = "Número "+num;
-  };
-
-  // BOTÃO DIREITO (ADMIN)
-  div.oncontextmenu = (e)=>{
-    e.preventDefault();
-    if(isAdmin){
-      if(confirm("Liberar número "+num+"?")){
-        db.ref("rifa/"+num).remove();
-      }
-    }
-  };
-
-  grid.appendChild(div);
 }
 
 // ATUALIZAR STATUS
@@ -238,64 +168,8 @@ db.ref("rifa").on("value", snap=>{
   });
 });
 
-// RESERVAR
-function reservar(){
-  let nome = document.getElementById("nome").value;
-  let whats = document.getElementById("whats").value;
-
-  if(!nome || !whats){
-    alert("Preencha tudo");
-    return;
-  }
-
-  let ref = db.ref("rifa/"+selecionado);
-
-  ref.once("value").then(snap=>{
-    if(snap.exists()){
-      alert("Número já escolhido!");
-      return;
-    }
-
-    ref.set({
-      nome,
-      whats,
-      status:"reservado"
-    });
-
-    window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
-
-    fecharForm();
-  });
-}
-  
-function criarNumero(num, top, left){
-  let div = document.createElement("div");
-
-  div.className="numero";
-  div.innerText = num;
-
-  div.style.position = "absolute";
-  div.style.top = top + "%";
-  div.style.left = left + "%";
-  div.style.width = "3.8%";
-  div.style.height = "5.5%";
-
-  div.onclick = () => clicarNumero(div, num);
-
-  div.oncontextmenu = (e)=>{
-    e.preventDefault();
-    if(isAdmin){
-      if(confirm("Liberar número "+num+"?")){
-        db.ref("rifa/"+num).remove();
-      }
-    }
-  };
-
-  document.querySelector(".board").appendChild(div);
-}
-  
-function clicarNumero(div, num){
-  document.getElementById("clickSound").play();
+// CLIQUE
+function clicar(div,num){
 
   if(isAdmin){
     db.ref("rifa/"+num).once("value").then(snap=>{
@@ -316,7 +190,33 @@ function clicarNumero(div, num){
   document.getElementById("form").style.display="block";
   document.getElementById("num").innerText = "Número "+num;
 }
-  
+
+// RESERVAR
+function reservar(){
+  let nome = document.getElementById("nome").value;
+  let whats = document.getElementById("whats").value;
+
+  if(!nome || !whats){
+    alert("Preencha tudo");
+    return;
+  }
+
+  let ref = db.ref("rifa/"+selecionado);
+
+  ref.once("value").then(snap=>{
+    if(snap.exists()){
+      alert("Número já escolhido!");
+      return;
+    }
+
+    ref.set({nome, whats, status:"reservado"});
+
+    window.open(`https://wa.me/5548988407996?text=Olá! Escolhi o número ${selecionado} na rifa da Maitê 😊`);
+
+    fecharForm();
+  });
+}
+
 function fecharForm(){
   document.getElementById("form").style.display="none";
 }
