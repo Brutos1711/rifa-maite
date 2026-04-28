@@ -9,9 +9,9 @@
 body{
   margin:0;
   background:#000;
+  font-family:Arial;
 }
 
-/* ÁREA */
 .board{
   position:relative;
   width:100%;
@@ -19,33 +19,23 @@ body{
   margin:auto;
 }
 
-/* IMAGEM */
 .board img{
   width:100%;
-  height:auto; /* 🔥 ESSENCIAL */
   display:block;
 }
 
-/* ÁREA CLICÁVEL */
 .numero{
   position:absolute;
   width:3.8%;
   height:5.5%;
-
   cursor:pointer;
-
-  background:transparent;
-  border:none;
-  color:transparent;
 }
 
-/* HOVER */
 .numero:hover{
   background:rgba(255,255,255,0.25);
   border-radius:6px;
 }
 
-/* STATUS */
 .reservado{
   background:rgba(255,229,153,0.7);
   border-radius:6px;
@@ -56,7 +46,6 @@ body{
   border-radius:6px;
 }
 
-/* FORM */
 #form{
   position:fixed;
   bottom:0;
@@ -66,7 +55,6 @@ body{
   display:none;
 }
 
-/* ADMIN */
 .adminBar{
   position:fixed;
   top:0;
@@ -77,43 +65,45 @@ body{
   padding:5px;
   display:none;
 }
+
+/* painel ajuste */
+#ajusteBox{
+  position:fixed;
+  right:10px;
+  top:10px;
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  z-index:9999;
+  font-size:12px;
+}
 </style>
 </head>
- 
-<body>
-  
-<div id="ajusteBox" style="
-position:fixed;
-right:10px;
-top:10px;
-background:#fff;
-padding:10px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.3);
-z-index:9999;
-font-size:12px;
-">
 
+<body>
+
+<div id="ajusteBox">
 <b>AJUSTE</b><br>
 
-X: <button onclick="startX-=1">-</button>
-<button onclick="startX+=1">+</button><br>
+X: <button onclick="startX--">-</button>
+<button onclick="startX++">+</button><br>
 
-Y: <button onclick="startY-=1">-</button>
-<button onclick="startY+=1">+</button><br>
+Y: <button onclick="startY--">-</button>
+<button onclick="startY++">+</button><br>
 
-W: <button onclick="largura-=1">-</button>
-<button onclick="largura+=1">+</button><br>
+W: <button onclick="largura--">-</button>
+<button onclick="largura++">+</button><br>
 
-H: <button onclick="altura-=1">-</button>
-<button onclick="altura+=1">+</button><br>
+H: <button onclick="altura--">-</button>
+<button onclick="altura++">+</button><br>
 
 <button onclick="atualizar()">APLICAR</button>
-
 </div>
+
 <div id="adminBar" class="adminBar">🔐 MODO ADMIN</div>
 
-<div class="board">
+<div class="board" id="board">
   <img src="arte.png">
 </div>
 
@@ -129,16 +119,17 @@ H: <button onclick="altura-=1">-</button>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// ADMIN
+// 🔐 ADMIN
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("admin") === "123";
+
 if(isAdmin){
   document.getElementById("adminBar").style.display="block";
 }
 
-// FIREBASE
+// 🔥 FIREBASE (COLOCA SUA KEY)
 const firebaseConfig = {
-  apiKey: "SUA_KEY_AQUI",
+  apiKey: "AIzaSyDT8hvEal...",
   authDomain: "rifa-maite.firebaseapp.com",
   databaseURL: "https://rifa-maite-default-rtdb.firebaseio.com",
   projectId: "rifa-maite"
@@ -147,53 +138,70 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const board = document.querySelector(".board");
+const board = document.getElementById("board");
+
 let selecionado = null;
 
-// 🔧 AJUSTE FINO (SÓ ISSO AQUI)
+// 🔧 CONFIG PADRÃO
 let startX = 52;
 let startY = 18;
 let largura = 42;
 let altura = 68;
 
-// CALCULO RESPONSIVO
-let gapX = largura / 10;
-let gapY = altura / 10;
+// 🔥 CARREGAR CONFIG ONLINE
+db.ref("config").on("value", snap=>{
+  if(snap.exists()){
+    const cfg = snap.val();
+    startX = cfg.startX;
+    startY = cfg.startY;
+    largura = cfg.largura;
+    altura = cfg.altura;
+  }
+  renderGrid();
+});
 
-// CRIAR ÁREAS CLICÁVEIS
-let count = 1;
+// 🎯 CRIAR GRID
+function renderGrid(){
 
-for(let y=0;y<10;y++){
-  for(let x=0;x<10;x++){
+  board.innerHTML = '<img src="arte.png">';
 
-    let num = count.toString().padStart(2,'0');
+  let gapX = largura / 10;
+  let gapY = altura / 10;
 
-    let div = document.createElement("div");
-    div.className="numero";
-    div.innerText = num;
+  let count = 1;
 
-    div.style.left = (startX + x*gapX) + "%";
-    div.style.top = (startY + y*gapY) + "%";
-    div.style.width = (gapX * 0.8) + "%";
-    div.style.height = (gapY * 0.8) + "%";
+  for(let y=0;y<10;y++){
+    for(let x=0;x<10;x++){
 
-    div.onclick = () => clicar(div,num);
+      let num = count.toString().padStart(2,'0');
 
-    div.oncontextmenu = (e)=>{
-      e.preventDefault();
-      if(isAdmin){
-        if(confirm("Liberar número "+num+"?")){
-          db.ref("rifa/"+num).remove();
+      let div = document.createElement("div");
+      div.className="numero";
+      div.innerText = num;
+
+      div.style.left = (startX + x*gapX) + "%";
+      div.style.top = (startY + y*gapY) + "%";
+      div.style.width = (gapX * 0.8) + "%";
+      div.style.height = (gapY * 0.8) + "%";
+
+      div.onclick = () => clicar(div,num);
+
+      div.oncontextmenu = (e)=>{
+        e.preventDefault();
+        if(isAdmin){
+          if(confirm("Liberar número "+num+"?")){
+            db.ref("rifa/"+num).remove();
+          }
         }
-      }
-    };
+      };
 
-    board.appendChild(div);
-    count++;
+      board.appendChild(div);
+      count++;
+    }
   }
 }
 
-// ATUALIZA STATUS EM TEMPO REAL
+// 🔄 STATUS EM TEMPO REAL
 db.ref("rifa").on("value", snap=>{
   const data = snap.val() || {};
 
@@ -210,7 +218,7 @@ db.ref("rifa").on("value", snap=>{
   });
 });
 
-// CLIQUE
+// 👆 CLICK
 function clicar(div,num){
 
   if(isAdmin){
@@ -233,7 +241,23 @@ function clicar(div,num){
   document.getElementById("num").innerText = "Número "+num;
 }
 
-// RESERVAR
+// 💾 SALVAR AJUSTE
+function atualizar(){
+
+  if(isAdmin){
+    db.ref("config").set({
+      startX,
+      startY,
+      largura,
+      altura
+    });
+  }
+
+  console.log("CONFIG SALVA:");
+  console.log(startX, startY, largura, altura);
+}
+
+// 📲 RESERVAR
 function reservar(){
   let nome = document.getElementById("nome").value;
   let whats = document.getElementById("whats").value;
@@ -261,29 +285,6 @@ function reservar(){
 
     fecharForm();
   });
-}
-
-  function atualizar(){
-
-  let gapX = largura / 10;
-  let gapY = altura / 10;
-
-  let i = 0;
-
-  board.appendChild(div);
-    let y = Math.floor(i / 10);
-    let x = i % 10;
-
-    div.style.left = (startX + x*gapX) + "%";
-    div.style.top = (startY + y*gapY) + "%";
-    div.style.width = (gapX * 0.8) + "%";
-    div.style.height = (gapY * 0.8) + "%";
-
-    i++;
-  });
-
-  console.log("COPIA ISSO:");
-  console.log(`startX=${startX}, startY=${startY}, largura=${largura}, altura=${altura}`);
 }
 
 function fecharForm(){
